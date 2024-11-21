@@ -1,26 +1,38 @@
+version: '3.8'  # Specify the Docker Compose file format version
 
 services:
   mysql:
-    image: mysql
+    image: mysql:8
     container_name: mysqldb
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: product
     ports:
-      - "3308:3306"  # Host port 3307 mapped to container's MySQL port 3306 (Spring Boot connects to 3307)
+      - "3308:3306"
     volumes:
-      - ./mysql_data:/var/lib/mysql  # Correct volume path for MySQL data
+      - mysql_data:/var/lib/mysql  # Use a named volume instead of a relative path
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   springboot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: spring_springboot_project
     environment:
-      MYSQL_HOST: mysql           # Use the service name 'mysql' as the hostname
-      MYSQL_PORT: 3306  # Port 3307 (host-side)
-      MYSQL_DB: product           # Database name
-      MYSQL_USER: root            # Username
-      MYSQL_PASSWORD: root        # Password
+      MYSQL_HOST: mysqldb
+      MYSQL_PORT: 3306
+      MYSQL_DB: product
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
     ports:
-      - "8082:8080"               # Mapping Spring Boot app port
+      - "8082:8080"
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy  # Wait for MySQL to become healthy before starting Spring Boot
+
+volumes:
+  mysql_data:  # Named volume for MySQL data persistence
