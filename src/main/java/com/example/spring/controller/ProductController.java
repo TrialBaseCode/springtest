@@ -58,4 +58,9 @@ public class ProductController {
             throw new Exception("Not created");
         }
     }
+
+    @GetMapping("/connect")
+    public String getConnected() throws Exception {
+        return "server is connected";
+    }
 }
